@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Budget giornaliero</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F4F1;--card:#fff;--ink:#16243B;--mute:#5E6B7C;--ok:#1B7A5F;--bad:#B3392B;--line:#DDE3E8;--pigbg:#FBE9EC;--pigink:#7A2E3F;--btn:#16243B;--btntx:#fff;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101822;--card:#182332;--ink:#E7ECF3;--mute:#9AA8BA;--ok:#4CC9A0;--bad:#FF8A78;--line:#26354A;--pigbg:#3A2530;--pigink:#F4B6C2;--btn:#E7ECF3;--btntx:#101822;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101822;--card:#182332;--ink:#E7ECF3;--mute:#9AA8BA;--ok:#4CC9A0;--bad:#FF8A78;--line:#26354A;--pigbg:#3A2530;--pigink:#F4B6C2;--btn:#E7ECF3;--btntx:#101822;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:460px;margin:0 auto;padding:20px 16px 40px}
+h1,h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;margin:0}
+h2{font-size:18px;margin-bottom:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.hero{padding:8px 2px 4px}
+.hero p{margin:0;color:var(--mute)}
+#big{font:800 64px/1.05 "Bricolage Grotesque",system-ui,sans-serif;margin:4px 0 8px;letter-spacing:-1px}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+.msg{margin:8px 0 0;font-size:15px}
+input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-bottom:8px}
+input:focus-visible,button:focus-visible{outline:3px solid var(--ok);outline-offset:1px}
+label{display:block;font-size:14px;color:var(--mute);margin:6px 0 4px}
+button{font:600 15px system-ui,sans-serif;border:0;border-radius:10px;padding:12px 14px;background:var(--btn);color:var(--btntx);cursor:pointer}
+button.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:8px}.row button{flex:1}
+.full{width:100%}
+.pig{background:var(--pigbg);border-color:transparent;color:var(--pigink)}
+.pig h2{display:flex;justify-content:space-between;align-items:baseline}
+.pig input{background:var(--card);color:var(--ink)}
+.pig button{background:var(--pigink);color:var(--pigbg)}
+.pig button.alt{background:transparent;color:var(--pigink);border:1px solid var(--pigink)}
+.pig .row,.pig #pRest{margin-top:4px}
+.kv{display:flex;justify-content:space-between;padding:4px 0}
+.kv span:first-child{color:var(--mute)}
+.day{font-size:14px;color:var(--mute);margin:12px 0 4px}
+.tx{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.tx .n{flex:1;overflow-wrap:anywhere}
+.tx button{padding:4px 9px;background:transparent;color:var(--mute);border:1px solid var(--line)}
+.small{font-size:14px;color:var(--mute)}
+</style>
+</head>
+<body>
+<main>
+
+<section id="setup" hidden>
+  <h1>Imposta il budget</h1>
+  <div class="card">
+    <label for="sTotal">Budget totale per tutto il periodo (£)</label>
+    <input id="sTotal" type="number" inputmode="decimal" step="0.01" min="0">
+    <label for="sStart">Primo giorno</label>
+    <input id="sStart" type="date">
+    <label for="sEnd">Ultimo giorno</label>
+    <input id="sEnd" type="date">
+    <p class="small">Conta solo i soldi da spendere: affitto e spese fisse restano fuori.</p>
+    <button class="full" id="sSave">Salva</button>
+    <button class="alt full" id="sCancel" hidden style="margin-top:8px">Annulla</button>
+    <button class="alt full" id="sWipe" hidden style="margin-top:8px">Cancella tutti i dati</button>
+  </div>
+</section>
+
+<section id="main" hidden>
+  <div class="hero">
+    <p>Oggi puoi spendere</p>
+    <div id="big">£0</div>
+    <p id="line1"></p>
+    <p id="line2"></p>
+    <p class="msg" id="msg"></p>
+  </div>
+
+  <div class="card">
+    <h2>Ho speso</h2>
+    <input id="eAmt" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Importo in £">
+    <input id="eNote" type="text" placeholder="Per cosa? (facoltativo)">
+    <button class="full" id="eAdd">Aggiungi spesa</button>
+  </div>
+
+  <div class="card pig">
+    <h2><span>Salvadanaio</span><span id="pig">£0</span></h2>
+    <p class="small" style="color:inherit;margin:0 0 8px">Per vestiti e sfizi: i soldi qui dentro non contano nel budget giornaliero.</p>
+    <button class="full" id="pRest" hidden></button>
+    <input id="pAmt" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Importo in £" style="margin-top:8px">
+    <input id="pNote" type="text" placeholder="Cosa compri? (facoltativo)">
+    <div class="row">
+      <button id="pIn">Metti da parte</button>
+      <button class="alt" id="pOut">Spendi da qui</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="kv"><span>Domani avrai</span><strong id="tom"></strong></div>
+    <div class="kv"><span>Rimasto in totale</span><strong id="rest"></strong></div>
+    <div class="kv"><span>Giorni rimasti (oggi incluso)</span><strong id="days"></strong></div>
+  </div>
+
+  <div class="card">
+    <h2>Movimenti</h2>
+    <div id="hist"></div>
+  </div>
+
+  <button class="alt full" id="edit" style="margin-top:14px">Modifica budget e date</button>
+</section>
+
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const K="budgetgiorno1";
+let S=null,editing=false,wipeArmed=false;
+const fmt=n=>new Intl.NumberFormat("it-IT",{style:"currency",currency:"GBP"}).format(n);
+const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const today=()=>iso(new Date());
+const dd=(a,b)=>Math.round((new Date(b+"T12:00")-new Date(a+"T12:00"))/864e5);
+function load(){try{const r=localStorage.getItem(K);S=r?JSON.parse(r):null}catch(e){S=null}}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+const sum=(f)=>S.tx.filter(f).reduce((s,x)=>s+x.a,0);
+
+function calc(){
+  const t=today(),eff=t<S.start?S.start:t;
+  const left=Math.max(1,dd(eff,S.end)+1);
+  const out=x=>x.t==="s"||x.t==="p";
+  const before=sum(x=>out(x)&&x.d<t);
+  const todayOut=sum(x=>out(x)&&x.d===t);
+  const pool=S.total-before;
+  const allow=pool/left;
+  return{t,left,pool,allow,todayOut,
+    rem:allow-todayOut,
+    spent:sum(x=>x.t==="s"&&x.d===t),
+    tom:left>1?(pool-todayOut)/(left-1):null,
+    piggy:sum(x=>x.t==="p")-sum(x=>x.t==="x")};
+}
+
+function say(s){$("msg").textContent=s}
+function render(){
+  $("setup").hidden=!(editing||!S);
+  $("main").hidden=editing||!S;
+  if(!S||editing)return;
+  const c=calc();
+  $("big").textContent=fmt(c.rem);
+  $("big").className=c.rem<0?"neg":"pos";
+  $("line1").textContent="Budget di oggi: "+fmt(c.allow);
+  $("line2").textContent="Speso oggi: "+fmt(c.spent);
+  if(!$("msg").dataset.keep){
+    say(c.rem<0
+      ?"Hai sforato di "+fmt(-c.rem)+": il budget dei prossimi giorni scende."
+      :"Quello che non spendi resta ai giorni dopo, oppure lo metti nel salvadanaio.");
+  }
+  $("tom").textContent=c.tom===null?"è l’ultimo giorno":fmt(c.tom)+" ("+(c.tom-c.allow>=0?"+":"−")+fmt(Math.abs(c.tom-c.allow))+")";
+  $("rest").textContent=fmt(c.pool-c.todayOut);
+  $("days").textContent=c.left;
+  $("pig").textContent=fmt(c.piggy);
+  const pr=$("pRest");
+  pr.hidden=!(c.rem>0.005);
+  pr.textContent="Metti da parte il resto di oggi ("+fmt(Math.max(0,c.rem))+")";
+  const list=[...S.tx].sort((a,b)=>b.d.localeCompare(a.d)||b.id-a.id).slice(0,40);
+  const h=$("hist");h.textContent="";
+  if(!list.length){h.innerHTML='<p class="small">Ancora nessun movimento. Aggiungi la prima spesa.</p>';return}
+  let last="";
+  for(const x of list){
+    if(x.d!==last){last=x.d;const p=document.createElement("div");p.className="day";
+      p.textContent=x.d===c.t?"Oggi":new Date(x.d+"T12:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"});h.appendChild(p)}
+    const r=document.createElement("div");r.className="tx";
+    const n=document.createElement("span");n.className="n";
+    n.textContent=(x.t==="p"?"Al salvadanaio":x.t==="x"?"Dal salvadanaio":"Spesa")+(x.n?": "+x.n:"");
+    const a=document.createElement("strong");a.textContent=(x.t==="p"?"":"−")+fmt(x.a);
+    const b=document.createElement("button");b.textContent="✕";b.title="Elimina";b.setAttribute("aria-label","Elimina movimento");b.dataset.id=x.id;
+    r.append(n,a,b);h.appendChild(r);
+  }
+}
+
+function num(v){const a=parseFloat(String(v).replace(",","."));return a>0?Math.round(a*100)/100:0}
+function add(t,a,n){
+  if(!a){say("Scrivi un importo maggiore di zero.");$("msg").dataset.keep=1;return false}
+  delete $("msg").dataset.keep;
+  S.tx.push({id:Date.now()+Math.random(),d:today(),a,n:(n||"").trim(),t});save();render();return true;
+}
+$("eAdd").onclick=()=>{if(add("s",num($("eAmt").value),$("eNote").value)){$("eAmt").value="";$("eNote").value=""}};
+$("pIn").onclick=()=>{if(add("p",num($("pAmt").value),$("pNote").value)){$("pAmt").value="";$("pNote").value=""}};
+$("pOut").onclick=()=>{
+  const a=num($("pAmt").value),c=calc();
+  if(a>c.piggy+0.005){say("Nel salvadanaio ci sono solo "+fmt(c.piggy)+".");$("msg").dataset.keep=1;return}
+  if(add("x",a,$("pNote").value)){$("pAmt").value="";$("pNote").value=""}
+};
+$("pRest").onclick=()=>{const c=calc();if(c.rem>0.005)add("p",Math.floor(c.rem*100)/100,"resto di oggi")};
+$("hist").onclick=e=>{const id=e.target.dataset&&e.target.dataset.id;if(!id)return;
+  S.tx=S.tx.filter(x=>String(x.id)!==id);save();render()};
+
+$("edit").onclick=()=>{
+  editing=true;wipeArmed=false;$("sWipe").textContent="Cancella tutti i dati";
+  $("sTotal").value=S.total;$("sStart").value=S.start;$("sEnd").value=S.end;
+  $("sCancel").hidden=false;$("sWipe").hidden=false;render();
+};
+$("sCancel").onclick=()=>{editing=false;render()};
+$("sSave").onclick=()=>{
+  const total=num($("sTotal").value),st=$("sStart").value,en=$("sEnd").value;
+  if(!total||!st||!en||en<st){alert("Controlla budget e date: l’ultimo giorno deve venire dopo il primo.");return}
+  S=S?{...S,total,start:st,end:en}:{total,start:st,end:en,tx:[]};
+  save();editing=false;render();
+};
+$("sWipe").onclick=()=>{
+  if(!wipeArmed){wipeArmed=true;$("sWipe").textContent="Sicura? Tocca di nuovo per cancellare";return}
+  try{localStorage.removeItem(K)}catch(e){}
+  S=null;editing=false;initSetup();render();
+};
+
+function initSetup(){
+  const s=new Date(),e=new Date(s);e.setMonth(e.getMonth()+10);e.setDate(e.getDate()-1);
+  $("sTotal").value="";$("sStart").value=iso(s);$("sEnd").value=iso(e);
+  $("sCancel").hidden=true;$("sWipe").hidden=true;
+}
+load();
+if(!S)initSetup();
+render();
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)render()});
+setInterval(render,60000);
+</script>
+</body>
+</html>
